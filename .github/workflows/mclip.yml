@@ -1,0 +1,25 @@
+---
+name: mclip
+on: push
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: make build
+
+      - name: Upload 
+        uses: actions/upload-artifact@v3
+        with:
+          name: mclip
+          path: build/mclip
+
+      - name: Release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
