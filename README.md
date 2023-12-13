@@ -21,14 +21,14 @@ This section explains how to use mclip in several tools.
 Display the help.
 
 ```bash
-clip --help
+mclip --help
 Usage: mclip [OPTION]
 
 Clipboard which stores its data inside shared memory.
 
-         h-, --help      read text from standard input and write it into the clipboard shared memory (default).
-         i-, --in        read text from standard input and write it into the clipboard shared memory (default).
-         o-, --out       print the content of the clipboard shared memory.
+         h-, --help      show quick summary of options
+         i-, --in        read text from standard input and write it into the clipboard shared memory (default)
+         o-, --out       print the content of the clipboard shared memory
 ```
 
 To save text into the clipboard just enter it through stdin.

@@ -1,0 +1,118 @@
+.TH MCLIP 1 "13 December 2023"
+.SH NAME
+mclip \- In memory clipboard
+.SH SYNOPSIS
+\fBmclip\fP [OPTION]
+.SH DESCRIPTION
+\fBmclip\fP (for "\fBM\fPemory \fBClip\fPboard") is a very simple clipboard manager which stores its data inside a POSIX
+shared memory object.
+
+Today several clipboard tools exist but almost all of them require a specific dependency (X11, Wayland, Tmux, SSH, etc.).
+
+mclip is a tiny binary which depends only on low level Linux / UNIX system functions like \fBshm_open\fP or \fBmmap\fP. So it is usable in very basic environments without windowing systems, a basic terminal is sufficient.
+.SS Options
+.TP
+\fB-h, --help\fP
+show quick summary of options
+.TP
+\fB-i, --in\fP
+read text from standard input and write it into the clipboard shared memory (default)
+.TP
+\fB-o, --out\fP
+print the content of the clipboard shared memory
+
+.SH EXAMPLES
+This section explains how to use mclip in several contexts, using the CLI, Bash, etc.
+
+.SS
+\fBCLI\fP
+Copying to the clipboard can be done using a pipe.
+
+\fB$ echo "Hello world!" | mclip\fP
+
+Or by entering characters with the keyboard (press CTRL+D to finish you input).
+
+\fB$ mclip
+.br
+I can enter text on
+.br
+several lines
+.br
+<CTRL+D>\fP
+
+Then the clipboard content is displayed with the \fB-o\fP, \fB--out\fP option.
+
+\fB$ mclip -o
+.br
+Hello world!\fP
+
+.SS
+\fBBash\fP
+
+Bash provides several shortcuts to kill and yank text, it is possible to bind the \fBC-k\fP, \fBC-u\fP and \fBC-y\fP shortcuts to copy and paste text to and from mclip.
+
+As a reminder here is the description of those shortcuts taken from the official GNU Bash documentation.
+
+\fBC-k\fP : Kill the text from the current cursor position to the end of the line.
+.br
+\fBC-u\fP : Kill backward from the cursor to the beginning of the current line.
+.br
+\fBC-y\fP : Yank the top of the kill ring into the buffer at the cursor.
+
+To copy and paste text to and from mclip, add the following lines to your \fB~/.bashrc\fP file (this solution is taken from https://stackoverflow.com/questions/994563/integrate-readlines-kill-ring-and-the-x11-clipboard/1088763#answer-1088763).
+
+\fBon_c_k() {
+    echo -n "${READLINE_LINE:$READLINE_POINT}" | mclip
+    READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}"
+.br
+}
+
+on_c_u() {
+    echo -n "${READLINE_LINE:0:$READLINE_POINT}" | mclip
+    READLINE_LINE="${READLINE_LINE:$READLINE_POINT}"
+    READLINE_POINT=0
+.br
+}
+
+on_c_y() {
+    CLIP=$(mclip -o)
+    COUNT=$(echo -n "$CLIP" | wc -c)
+    READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}${CLIP}${READLINE_LINE:$READLINE_POINT}"
+    READLINE_POINT=$(($READLINE_POINT + $COUNT))
+.br
+}
+
+bind -x '"\C-k": on_c_k'
+.br
+bind -x '"\C-u": on_c_u'
+.br
+bind -x '"\C-y": on_c_y'\fP
+
+.SS
+\fBNeovim\fP
+
+Neovim provides a Clipboard integration which allows to provide any clipboard tool.
+
+You can configure mclip as the Neovim clipboard tool using the following Lua configuration object.
+
+\fBvim.g.clipboard = {
+    name = 'mclip',
+    copy = {
+        ['+'] = 'mclip',
+        ['*'] = 'mclip',
+    },
+    paste = {
+        ['+'] = 'mclip -o',
+        ['*'] = 'mclip -o',
+    },
+    cache_enabled = false,
+.br
+}\fP
+
+
+.SH "SEE ALSO"
+mmap(2), shm_open(3), xclip(1)
+.SH BUGS
+Please open a Github issue at https://github.com/bgaillard/mclip/issues.
+.SH AUTHORS
+Baptiste Gaillard (baptiste.gaillard@gmail.com)

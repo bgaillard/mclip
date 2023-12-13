@@ -10,14 +10,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build
-        run: make build
+      - name: Autoreconf
+        run: autoreconf --install
+
+      - name: Configure
+        run: ./configure
+
+      - name: Make
+        run: make
 
       - name: Upload 
         uses: actions/upload-artifact@v3
         with:
           name: mclip
-          path: build/mclip
+          path: src/mclip
 
       - name: Release
         uses: cycjimmy/semantic-release-action@v4

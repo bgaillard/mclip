@@ -93,9 +93,9 @@ void out() {
 void help() {
   printf("Usage: mclip [OPTION]\n\n");
   printf("Clipboard which stores its data inside shared memory.\n\n");
-  printf("\t h-, --help  \t read text from standard input and write it into the clipboard shared memory (default).\n");
-  printf("\t i-, --in    \t read text from standard input and write it into the clipboard shared memory (default).\n");
-  printf("\t o-, --out   \t print the content of the clipboard shared memory.\n\n");
+  printf("\t -h, --help  \t show quick summary of options\n");
+  printf("\t -i, --in    \t read text from standard input and write it into the clipboard shared memory (default)\n");
+  printf("\t -o, --out   \t print the content of the clipboard shared memory\n\n");
 }
 
 /**
