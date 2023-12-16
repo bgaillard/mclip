@@ -1,0 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: mclip
+Upstream-Contact: Baptiste Gaillard <baptiste.gaillard@gmail.com>
+Source: https://github.com/bgaillard/mclip
+#
+# Please double check copyright with the licensecheck(1) command.
+
+Files:
+  *
+Copyright: 2023 Baptiste Gaillard
+License:   GPL-3+

@@ -4,7 +4,30 @@ on: push
 permissions:
   contents: write
 jobs:
+
+  # Lint
+  cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install
+        run: sudo apt install -y cppcheck
+      - name: Cppcheck
+        run: cppcheck ${GITHUB_WORKSPACE}/src/*.c
+  cpplint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install
+        run: sudo apt install -y cpplint
+      - name: Cpplint
+        run: cpplint ${GITHUB_WORKSPACE}/src/*.c
+
+  # Build
   build:
+    needs: [cppcheck, cpplint]
     runs-on: ubuntu-latest 
     steps:
       - name: Checkout
@@ -19,11 +42,75 @@ jobs:
       - name: Make
         run: make
 
-      - name: Upload 
-        uses: actions/upload-artifact@v3
+      - name: Make dist
+        run: make dist
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
         with:
           name: mclip
           path: src/mclip
+          if-no-files-found: error
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-archive
+          path: mclip-*.tar.gz
+          if-no-files-found: error
+
+  # Package - Debian
+  package-debian:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download source-archive
+        uses: actions/download-artifact@v4
+        with:
+          name: source-archive
+        
+      - name: Debian package
+        run: |
+          sudo apt-get install -y devscripts debhelper
+          mkdir -p "${RUNNER_TEMP}/debian-packaging"
+          cp mclip-*.tar.gz "${RUNNER_TEMP}/debian-packaging"
+          cd "${RUNNER_TEMP}/debian-packaging"
+          ORIG_TAR_GZ=$(ls mclip-*.gz | sed -E 's/^mclip-([[:digit:]])\.([[:digit:]])\.([[:digit:]])\.tar\.gz$/mclip_\1.\2.\3\.orig\.tar\.gz/g')
+          mv mclip-*.tar.gz "${ORIG_TAR_GZ}"
+          tar xf "${ORIG_TAR_GZ}"
+          cd mclip-*/
+          cp -R "${GITHUB_WORKSPACE}/debian" .
+          debuild -us -uc
+
+      - name: Upload debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-amd64-package
+          path: ${{ runner.temp }}/debian-packaging/mclip_*_amd64.deb
+          if-no-files-found: error
+
+  # Package - Redhat
+  package-redhat:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Redhat package
+        run: |
+          sudo apt-get install -y rpm
+
+  # Release
+  release:
+    needs: [package-debian, package-redhat]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Release
         uses: cycjimmy/semantic-release-action@v4

@@ -1,13 +1,26 @@
+/** 
+ * Copyright (C) 2023 Baptiste Gaillard
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public 
+ * License as published by the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program. If not, see 
+ * <https://www.gnu.org/licenses/>.
+*/
+
 #define _GNU_SOURCE
 
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
-#include <getopt.h>
 
 static const char SHARED_MEMORY_NAME[] = "/mclip";
 
@@ -25,18 +38,18 @@ void in() {
     exit(1);
   }
 
-  char characters[2]  = {0};
+  char characters[128] = {0};
 
   int offset = 0;
   int nb_read = 0;
   int total_nb_read = 0;
 
-  while(fgets(characters, sizeof(characters), stdin) != NULL) {
+  while (fgets(characters, sizeof(characters), stdin) != NULL) {
     nb_read = strlen(characters);
     total_nb_read = total_nb_read + nb_read;
 
     // Truncate the file to reserve space in it
-    if(ftruncate(fd, total_nb_read) == -1) {
+    if (ftruncate(fd, total_nb_read) == -1) {
       fprintf(stderr, "ftruncate() failed\n");
       exit(1);
     }
@@ -46,7 +59,7 @@ void in() {
     else
       addr = mmap(NULL, total_nb_read, PROT_WRITE, MAP_SHARED, fd, 0);
 
-    sprintf(addr + offset, "%s", characters);
+    snprintf(addr + offset, nb_read, "%s", characters);
 
     offset = total_nb_read;
   }
@@ -74,7 +87,8 @@ void out() {
 
   fstat(fd, &st);
 
-  // The shared memory is empty when it has just been initialized the first time with 'shm_open()'.
+  // The shared memory is empty when it has just been initialized the first
+  // time with 'shm_open()'.
   if (st.st_size != 0) {
     addr = mmap(NULL, 1024, PROT_READ, MAP_SHARED, fd, 0);
 
@@ -84,7 +98,7 @@ void out() {
     }
   }
 
-  printf("%s", (char*) addr);
+  printf("%s", addr);
 }
 
 /**
@@ -94,8 +108,10 @@ void help() {
   printf("Usage: mclip [OPTION]\n\n");
   printf("Clipboard which stores its data inside shared memory.\n\n");
   printf("\t -h, --help  \t show quick summary of options\n");
-  printf("\t -i, --in    \t read text from standard input and write it into the clipboard shared memory (default)\n");
-  printf("\t -o, --out   \t print the content of the clipboard shared memory\n\n");
+  printf("\t -i, --in    \t read text from standard input and write it into "
+         "the clipboard shared memory (default)\n");
+  printf("\t -o, --out   \t print the content of the clipboard shared "
+         "memory\n\n");
 }
 
 /**
@@ -104,8 +120,7 @@ void help() {
  * @param argc Number of arguments.
  * @param argv Array of arguments.
  */
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   int option_help = 0;
   int option_in = 0;
   int option_out = 0;
@@ -113,49 +128,47 @@ int main(int argc, char *argv[])
   int c;
   int option_index = 0;
 
-  static struct option long_options[] = {
-    {"help", no_argument, 0, 'h'},
-    {"in",   no_argument, 0, 'i'},
-    {"out",  no_argument, 0, 'o'},
-    {0, 0, 0, 0}
-  };
+  static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+                                         {"in", no_argument, 0, 'i'},
+                                         {"out", no_argument, 0, 'o'},
+                                         {0, 0, 0, 0}};
 
-  while(1) {
+  while (1) {
     c = getopt_long(argc, argv, "hio", long_options, &option_index);
 
     // No more options to read
     if (c == -1)
       break;
 
-    switch(c) {
+    switch (c) {
+    // --help
+    case 'h':
+      option_help = 1;
+      break;
 
-      // --help
-      case 'h':
-        option_help = 1;
-        break;
+    // --in
+    case 'i':
+      option_in = 1;
+      break;
 
-      // --in
-      case 'i':
-        option_in = 1;
-        break;
+    // --out
+    case 'o':
+      option_out = 1;
+      break;
 
-      // --out
-      case 'o':
-        option_out = 1;
-        break;
-
-      // Error encountered (i.e. bad option specified)
-      case '?':
-        exit(1);
+    // Error encountered (i.e. bad option specified)
+    case '?':
+      exit(1);
     }
-
   }
 
   if (option_help == 1 && (option_in == 1 || option_out == 1)) {
-    fprintf(stderr, "The '--help' option cannot be provided with the '--in' or '--out' option!\n");
+    fprintf(stderr, "The '--help' option cannot be provided with the "
+                    "'--in' or '--out' option!\n");
     return 1;
   } else if (option_help == 0 && option_in == 1 && option_out == 1) {
-    fprintf(stderr, "The '--in' and '--out' options cannot be specified together!\n");
+    fprintf(stderr,
+            "The '--in' and '--out' options cannot be specified together!\n");
     return 1;
   } else if (optind < argc) {
     fprintf(stderr, "Unknown argument speficied '%s'!\n", argv[optind]);

@@ -1,0 +1,17 @@
+Source: mclip
+Section: utils
+Priority: optional
+Maintainer: Baptiste Gaillard <baptiste.gaillard@gmail.com>
+Build-Depends: debhelper-compat (= 13), dh-autoreconf
+Standards-Version: 4.5.1
+Homepage: https://github.com/bgaillard/mclip
+Rules-Requires-Root: no
+Vcs-Git: https://github.com/bgaillard/mclip.git
+#Vcs-Browser: https://salsa.debian.org/debian/mclip
+
+Package: mclip
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: mclip (for "Memory CLIPboard") is a very simple clipboard manager which stores its data inside a POSIX
+ shared memory object.
